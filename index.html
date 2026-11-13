@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to CSV Converter</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; background: #f9f9f9; }
+        h1 { color: #333; }
+        textarea { width: 100%; height: 150px; padding: 10px; font-family: monospace; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>JSON to CSV Converter</h1>
+    <p>Apna JSON yahan paste karein:</p>
+    <textarea id="jsonInput" placeholder='[{"name": "Ali", "age": 25}, {"name": "Ahmed", "age": 30}]'></textarea>
+    <br>
+    <button onclick="convertToCsv()">Convert & Download CSV</button>
+
+    <h3>Result:</h3>
+    <pre id="output">Abhi koi data convert nahi hua...</pre>
+
+    <script>
+        function convertToCsv() {
+            const input = document.getElementById('jsonInput').value;
+            try {
+                const data = JSON.parse(input);
+                const items = Array.isArray(data) ? data : [data];
+                
+                if (items.length === 0) {
+                    alert('JSON data khali hai!');
+                    return;
+                }
+
+                const keys = Object.keys(items[0]);
+                const csvRows = [];
+
+                // Header row
+                csvRows.push(keys.join(','));
+
+                // Data rows
+                for (const row of items) {
+                    const values = keys.map(key => {
+                        const val = row[key] !== undefined ? row[key] : '';
+                        return `"${val}"`;
+                    });
+                    csvRows.push(values.join(','));
+                }
+
+                const csvString = csvRows.join('\n');
+                document.getElementById('output').innerText = csvString;
+
+                // Automatic file download
+                const blob = new Blob([csvString], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('href', url);
+                a.setAttribute('download', 'converted_data.csv');
+                a.click();
+
+            } catch (error) {
+                alert('Ghalat JSON format! Meherbani karke theek JSON enter karein.');
+            }
+        }
+    </script>
+
+</body>
+</html>
