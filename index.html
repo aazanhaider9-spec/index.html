@@ -1,72 +1,336 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON to CSV Converter</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; background: #f9f9f9; }
-        h1 { color: #333; }
-        textarea { width: 100%; height: 150px; padding: 10px; font-family: monospace; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 15px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataFlow SaaS — Pro JSON to CSV Converter</title>
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Navbar */
+    nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 2rem; background: var(--card); border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 1.3rem; font-weight: 700; color: var(--primary); }
+    .logo span { color: var(--text); }
+    .nav-actions { display: flex; gap: 1rem; align-items: center; }
+    
+    button {
+      padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-weight: 600;
+      cursor: pointer; transition: 0.2s; font-size: 0.9rem;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--border); }
+    .btn-success { background: var(--success); color: white; }
+    
+    /* Main Container */
+    .container { max-width: 1100px; width: 100%; margin: 2rem auto; padding: 0 1rem; flex: 1; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .header p { color: var(--muted); }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: space-between;
+      background: var(--card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .tool-group { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+    /* Editor Grid */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    
+    .box { display: flex; flex-direction: column; }
+    .box label { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 600; }
+    textarea {
+      width: 100%; height: 340px; background: var(--card); color: #e2e8f0;
+      border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+      font-family: 'Consolas', monospace; font-size: 0.9rem; resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--primary); }
+
+    /* Auth Modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal {
+      background: var(--card); padding: 2rem; border-radius: 12px; width: 100%;
+      max-width: 400px; border: 1px solid var(--border);
+    }
+    .modal h2 { margin-bottom: 0.5rem; }
+    .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .input-group { margin-bottom: 1rem; }
+    .input-group label { display: block; font-size: 0.85rem; margin-bottom: 0.3rem; color: var(--muted); }
+    .input-group input {
+      width: 100%; padding: 0.7rem; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text);
+    }
+    .auth-msg { font-size: 0.85rem; margin-top: 0.8rem; text-align: center; }
+    .badge {
+      background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 0.3rem 0.7rem;
+      border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>JSON to CSV Converter</h1>
-    <p>Apna JSON yahan paste karein:</p>
-    <textarea id="jsonInput" placeholder='[{"name": "Ali", "age": 25}, {"name": "Ahmed", "age": 30}]'></textarea>
-    <br>
-    <button onclick="convertToCsv()">Convert & Download CSV</button>
+  <!-- Navbar -->
+  <nav>
+    <div class="logo">DataFlow<span>SaaS</span></div>
+    <div class="nav-actions" id="nav-logged-out">
+      <button class="btn-outline" onclick="openModal('login')">Log In</button>
+      <button class="btn-primary" onclick="openModal('signup')">Sign Up Free</button>
+    </div>
+    <div class="nav-actions" id="nav-logged-in" style="display: none;">
+      <span class="badge" id="user-email-display">user@email.com</span>
+      <button class="btn-outline" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
 
-    <h3>Result:</h3>
-    <pre id="output">Abhi koi data convert nahi hua...</pre>
+  <!-- Main Workspace -->
+  <div class="container">
+    <div class="header">
+      <h1>Nested JSON to CSV Converter</h1>
+      <p>Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.</p>
+    </div>
 
-    <script>
-        function convertToCsv() {
-            const input = document.getElementById('jsonInput').value;
-            try {
-                const data = JSON.parse(input);
-                const items = Array.isArray(data) ? data : [data];
-                
-                if (items.length === 0) {
-                    alert('JSON data khali hai!');
-                    return;
-                }
+    <div class="toolbar">
+      <div class="tool-group">
+        <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileUpload(event)" />
+        <button class="btn-outline" onclick="document.getElementById('fileInput').click()">📁 Upload .JSON</button>
+        <button class="btn-outline" onclick="loadSample()">✨ Load Sample</button>
+        <button class="btn-outline" onclick="clearAll()">🗑️ Clear</button>
+      </div>
+      <div class="tool-group">
+        <button class="btn-primary" onclick="convertJsonToCsv()">⚡ Convert to CSV</button>
+        <button class="btn-outline" onclick="copyCsv()">📋 Copy CSV</button>
+        <button class="btn-success" onclick="downloadCsv()">⬇️ Download CSV</button>
+      </div>
+    </div>
 
-                const keys = Object.keys(items[0]);
-                const csvRows = [];
+    <div class="grid">
+      <div class="box">
+        <label>INPUT JSON</label>
+        <textarea id="jsonInput" placeholder='Paste your JSON array or object here...'></textarea>
+      </div>
+      <div class="box">
+        <label>OUTPUT CSV (FLATTENED)</label>
+        <textarea id="csvOutput" readonly placeholder='Your converted CSV will appear here...'></textarea>
+      </div>
+    </div>
+  </div>
 
-                // Header row
-                csvRows.push(keys.join(','));
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal">
+      <h2 id="modalTitle">Create Account</h2>
+      <p id="modalSubtitle">Sign up to unlock unlimited nested conversions.</p>
+      <div class="input-group">
+        <label>Email Address</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" />
+      </div>
+      <div class="input-group">
+        <label>Password (min 6 characters)</label>
+        <input type="password" id="authPassword" placeholder="••••••••" />
+      </div>
+      <button class="btn-primary" style="width: 100%;" id="authSubmitBtn" onclick="handleAuth()">Sign Up</button>
+      <button class="btn-outline" style="width: 100%; margin-top: 0.5rem;" onclick="closeModal()">Cancel</button>
+      <div class="auth-msg" id="authMessage"></div>
+    </div>
+  </div>
 
-                // Data rows
-                for (const row of items) {
-                    const values = keys.map(key => {
-                        const val = row[key] !== undefined ? row[key] : '';
-                        return `"${val}"`;
-                    });
-                    csvRows.push(values.join(','));
-                }
+  <script>
+    // ==========================================
+    // SUPABASE CONFIGURATION (UPDATED)
+    // ==========================================
+    const SUPABASE_URL = 'https://wbpwvnjfwjlaangnqcbm.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_j44_LPj3_3Bc3-7lUYDvjw_L4-Bcynj';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-                const csvString = csvRows.join('\n');
-                document.getElementById('output').innerText = csvString;
+    let authMode = 'signup';
 
-                // Automatic file download
-                const blob = new Blob([csvString], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.setAttribute('href', url);
-                a.setAttribute('download', 'converted_data.csv');
-                a.click();
+    // Check Auth State on Load
+    async function checkUser() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      updateNavbar(user);
+    }
+    checkUser();
 
-            } catch (error) {
-                alert('Ghalat JSON format! Meherbani karke theek JSON enter karein.');
-            }
+    function updateNavbar(user) {
+      if (user) {
+        document.getElementById('nav-logged-out').style.display = 'none';
+        document.getElementById('nav-logged-in').style.display = 'flex';
+        document.getElementById('user-email-display').textContent = user.email;
+      } else {
+        document.getElementById('nav-logged-out').style.display = 'flex';
+        document.getElementById('nav-logged-in').style.display = 'none';
+      }
+    }
+
+    function openModal(mode) {
+      authMode = mode;
+      document.getElementById('authModal').style.display = 'flex';
+      document.getElementById('authMessage').textContent = '';
+      if (mode === 'signup') {
+        document.getElementById('modalTitle').textContent = 'Create Free Account';
+        document.getElementById('modalSubtitle').textContent = 'Join DataFlow SaaS to save and export data.';
+        document.getElementById('authSubmitBtn').textContent = 'Sign Up';
+      } else {
+        document.getElementById('modalTitle').textContent = 'Welcome Back';
+        document.getElementById('modalSubtitle').textContent = 'Log in to your DataFlow SaaS account.';
+        document.getElementById('authSubmitBtn').textContent = 'Log In';
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('authModal').style.display = 'none';
+    }
+
+    async function handleAuth() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      const msgEl = document.getElementById('authMessage');
+
+      if (!email || !password) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = 'Please enter both email and password.';
+        return;
+      }
+
+      msgEl.style.color = '#94a3b8';
+      msgEl.textContent = 'Processing...';
+
+      let result;
+      if (authMode === 'signup') {
+        result = await supabaseClient.auth.signUp({ email, password });
+      } else {
+        result = await supabaseClient.auth.signInWithPassword({ email, password });
+      }
+
+      if (result.error) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = result.error.message;
+      } else {
+        msgEl.style.color = '#34d399';
+        msgEl.textContent = authMode === 'signup' ? 'Account created!' : 'Logged in!';
+        updateNavbar(result.data.user);
+        setTimeout(closeModal, 800);
+      }
+    }
+
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+      updateNavbar(null);
+    }
+
+    // ==========================================
+    // NESTED JSON FLATTENER & CONVERTER
+    // ==========================================
+    function flattenObject(obj, prefix = '', res = {}) {
+      for (let key in obj) {
+        if (!obj.hasOwnProperty(key)) continue;
+        const propName = prefix ? `${prefix}.${key}` : key;
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          flattenObject(obj[key], propName, res);
+        } else if (Array.isArray(obj[key])) {
+          res[propName] = JSON.stringify(obj[key]);
+        } else {
+          res[propName] = obj[key];
         }
-    </script>
+      }
+      return res;
+    }
 
+    function convertJsonToCsv() {
+      const raw = document.getElementById('jsonInput').value.trim();
+      if (!raw) return alert('Please paste JSON data first!');
+
+      try {
+        let parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) parsed = [parsed];
+
+        const flattenedRows = parsed.map(item => flattenObject(item));
+        const headers = [...new Set(flattenedRows.flatMap(row => Object.keys(row)))];
+
+        const csvLines = [headers.join(',')];
+        for (const row of flattenedRows) {
+          const values = headers.map(header => {
+            const val = row[header] === undefined || row[header] === null ? '' : String(row[header]);
+            return `"${val.replace(/"/g, '""')}"`;
+          });
+          csvLines.push(values.join(','));
+        }
+
+        document.getElementById('csvOutput').value = csvLines.join('\n');
+      } catch (err) {
+        alert('Invalid JSON format: ' + err.message);
+      }
+    }
+
+    // ==========================================
+    // FILE UPLOAD, COPY & DOWNLOAD UTILITIES
+    // ==========================================
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('jsonInput').value = e.target.result;
+        convertJsonToCsv();
+      };
+      reader.readAsText(file);
+    }
+
+    function copyCsv() {
+      const csv = document.getElementById('csvOutput').value;
+      if (!csv) return alert('Nothing to copy!');
+      navigator.clipboard.writeText(csv);
+      alert('CSV copied to clipboard!');
+    }
+
+    function downloadCsv() {
+      const csv = document.getElementById('csvOutput').value;
+      if (!csv) return alert('Convert JSON to CSV first!');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dataflow_export.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadSample() {
+      const sample = [
+        { id: 101, user: { name: "Ali Khan", contact: { city: "Lahore", phone: "0300-1234567" } }, plan: "Pro" },
+        { id: 102, user: { name: "Sara Ahmed", contact: { city: "Karachi", phone: "0321-7654321" } }, plan: "Free" }
+      ];
+      document.getElementById('jsonInput').value = JSON.stringify(sample, null, 2);
+      convertJsonToCsv();
+    }
+
+    function clearAll() {
+      document.getElementById('jsonInput').value = '';
+      document.getElementById('csvOutput').value = '';
+    }
+  </script>
 </body>
 </html>
