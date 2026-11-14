@@ -69,21 +69,37 @@
     /* Auth Modal */
     .modal-overlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-      justify-content: center; align-items: center; z-index: 100;
+      justify-content: center; align-items: center; z-index: 100; padding: 1rem;
     }
     .modal {
       background: var(--card); padding: 2rem; border-radius: 12px; width: 100%;
-      max-width: 400px; border: 1px solid var(--border);
+      max-width: 410px; border: 1px solid var(--border);
     }
-    .modal h2 { margin-bottom: 0.5rem; }
-    .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .modal h2 { margin-bottom: 0.4rem; }
+    .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.4rem; }
     .input-group { margin-bottom: 1rem; }
     .input-group label { display: block; font-size: 0.85rem; margin-bottom: 0.3rem; color: var(--muted); }
     .input-group input {
       width: 100%; padding: 0.7rem; border-radius: 6px; border: 1px solid var(--border);
-      background: var(--bg); color: var(--text);
+      background: var(--bg); color: var(--text); font-size: 0.95rem;
     }
-    .auth-msg { font-size: 0.85rem; margin-top: 0.8rem; text-align: center; }
+    .input-group input:focus { outline: 1px solid var(--primary); }
+
+    /* Forgot Password Link */
+    .forgot-link {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      color: #60a5fa; font-size: 0.85rem; cursor: pointer;
+      margin-top: 0.4rem; text-decoration: none; font-weight: 500;
+    }
+    .forgot-link:hover { text-decoration: underline; color: #93c5fd; }
+    .q-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(96, 165, 250, 0.2); border: 1px solid #60a5fa;
+      font-size: 0.7rem; font-weight: bold;
+    }
+
+    .auth-msg { font-size: 0.85rem; margin-top: 0.8rem; text-align: center; min-height: 1.2rem; }
     .badge {
       background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 0.3rem 0.7rem;
       border-radius: 20px; font-size: 0.8rem; font-weight: 600;
@@ -138,28 +154,63 @@
     </div>
   </div>
 
-  <!-- Auth Modal -->
+  <!-- Auth & Verification Portal Modal -->
   <div class="modal-overlay" id="authModal">
     <div class="modal">
       <h2 id="modalTitle">Create Account</h2>
       <p id="modalSubtitle">Sign up to unlock unlimited nested conversions.</p>
-      <div class="input-group">
-        <label>Email Address</label>
-        <input type="email" id="authEmail" placeholder="you@example.com" />
+
+      <!-- VIEW 1: Standard Login / Sign Up -->
+      <div id="standardAuthView">
+        <div class="input-group">
+          <label>Email Address</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" />
+        </div>
+        <div class="input-group">
+          <label>Password (min 6 characters)</label>
+          <input type="password" id="authPassword" placeholder="••••••••" />
+          <div style="text-align: right;">
+            <span class="forgot-link" onclick="switchToForgotPortal()">
+              <span class="q-icon">?</span> Forgot password?
+            </span>
+          </div>
+        </div>
+        <button class="btn-primary" style="width: 100%;" id="authSubmitBtn" onclick="handleAuth()">Sign Up</button>
       </div>
-      <div class="input-group">
-        <label>Password (min 6 characters)</label>
-        <input type="password" id="authPassword" placeholder="••••••••" />
+
+      <!-- VIEW 2: Forgot Password / Email Code Portal -->
+      <div id="forgotPortalView" style="display: none;">
+        <!-- Step A: Enter Email to Send Code -->
+        <div id="stepSendCode">
+          <div class="input-group">
+            <label>Enter Your Email Address</label>
+            <input type="email" id="recoveryEmail" placeholder="you@example.com" />
+          </div>
+          <button class="btn-primary" style="width: 100%;" onclick="sendVerificationCode()">📩 Send Verification Code</button>
+        </div>
+
+        <!-- Step B: Enter Code + New Password & Confirm -->
+        <div id="stepVerifyCode" style="display: none;">
+          <div class="input-group">
+            <label>6-Digit Verification Code (Check Email)</label>
+            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" style="letter-spacing: 3px; font-weight: bold; text-align: center;" />
+          </div>
+          <div class="input-group">
+            <label>Set New Password (min 6 characters)</label>
+            <input type="password" id="newPasswordInput" placeholder="••••••••" />
+          </div>
+          <button class="btn-success" style="width: 100%;" onclick="confirmCodeAndAccount()">✅ Confirm & Access Account</button>
+        </div>
       </div>
-      <button class="btn-primary" style="width: 100%;" id="authSubmitBtn" onclick="handleAuth()">Sign Up</button>
-      <button class="btn-outline" style="width: 100%; margin-top: 0.5rem;" onclick="closeModal()">Cancel</button>
+
+      <button class="btn-outline" style="width: 100%; margin-top: 0.6rem;" onclick="closeModal()">Cancel</button>
       <div class="auth-msg" id="authMessage"></div>
     </div>
   </div>
 
   <script>
     // ==========================================
-    // SUPABASE CONFIGURATION (UPDATED)
+    // SUPABASE CONFIGURATION
     // ==========================================
     const SUPABASE_URL = 'https://wbpwvnjfwjlaangnqcbm.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_j44_LPj3_3Bc3-7lUYDvjw_L4-Bcynj';
@@ -167,7 +218,6 @@
 
     let authMode = 'signup';
 
-    // Check Auth State on Load
     async function checkUser() {
       const { data: { user } } = await supabaseClient.auth.getUser();
       updateNavbar(user);
@@ -189,6 +239,11 @@
       authMode = mode;
       document.getElementById('authModal').style.display = 'flex';
       document.getElementById('authMessage').textContent = '';
+      
+      // Reset to Standard View
+      document.getElementById('standardAuthView').style.display = 'block';
+      document.getElementById('forgotPortalView').style.display = 'none';
+
       if (mode === 'signup') {
         document.getElementById('modalTitle').textContent = 'Create Free Account';
         document.getElementById('modalSubtitle').textContent = 'Join DataFlow SaaS to save and export data.';
@@ -204,6 +259,95 @@
       document.getElementById('authModal').style.display = 'none';
     }
 
+    // Switch to Forgot Password / Email Verification Code Portal
+    function switchToForgotPortal() {
+      document.getElementById('standardAuthView').style.display = 'none';
+      document.getElementById('forgotPortalView').style.display = 'block';
+      document.getElementById('stepSendCode').style.display = 'block';
+      document.getElementById('stepVerifyCode').style.display = 'none';
+      document.getElementById('authMessage').textContent = '';
+
+      document.getElementById('modalTitle').textContent = 'Email Verification Portal';
+      document.getElementById('modalSubtitle').textContent = 'Enter your email to receive a random verification code.';
+      
+      // Pre-fill email if already typed
+      const typedEmail = document.getElementById('authEmail').value.trim();
+      if (typedEmail) document.getElementById('recoveryEmail').value = typedEmail;
+    }
+
+    // Step A: Send Random 6-Digit Code to User's Email
+    async function sendVerificationCode() {
+      const email = document.getElementById('recoveryEmail').value.trim();
+      const msgEl = document.getElementById('authMessage');
+
+      if (!email) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = 'Please enter your email address first.';
+        return;
+      }
+
+      msgEl.style.color = '#94a3b8';
+      msgEl.textContent = 'Sending verification code to your email...';
+
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email: email,
+        options: { shouldCreateUser: true }
+      });
+
+      if (error) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = error.message;
+      } else {
+        msgEl.style.color = '#34d399';
+        msgEl.textContent = 'Code sent! Check your email inbox (or spam folder).';
+        document.getElementById('stepSendCode').style.display = 'none';
+        document.getElementById('stepVerifyCode').style.display = 'block';
+        document.getElementById('modalSubtitle').textContent = `Enter the code sent to ${email} and set your password.`;
+      }
+    }
+
+    // Step B: Verify Code + Set Password & Confirm Account
+    async function confirmCodeAndAccount() {
+      const email = document.getElementById('recoveryEmail').value.trim();
+      const token = document.getElementById('otpCodeInput').value.trim();
+      const newPassword = document.getElementById('newPasswordInput').value.trim();
+      const msgEl = document.getElementById('authMessage');
+
+      if (!token || token.length < 6) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = 'Please enter the 6-digit code from your email.';
+        return;
+      }
+      if (!newPassword || newPassword.length < 6) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = 'Please enter a password (at least 6 characters).';
+        return;
+      }
+
+      msgEl.style.color = '#94a3b8';
+      msgEl.textContent = 'Verifying code and confirming account...';
+
+      const { data, error } = await supabaseClient.auth.verifyOtp({
+        email: email,
+        token: token,
+        type: 'email'
+      });
+
+      if (error) {
+        msgEl.style.color = '#f87171';
+        msgEl.textContent = 'Invalid or expired code: ' + error.message;
+        return;
+      }
+
+      await supabaseClient.auth.updateUser({ password: newPassword });
+
+      msgEl.style.color = '#34d399';
+      msgEl.textContent = 'Account verified & confirmed! Logging you in...';
+      updateNavbar(data.user);
+      setTimeout(closeModal, 1000);
+    }
+
+    // Standard Sign Up / Login
     async function handleAuth() {
       const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPassword').value.trim();
@@ -285,9 +429,6 @@
       }
     }
 
-    // ==========================================
-    // FILE UPLOAD, COPY & DOWNLOAD UTILITIES
-    // ==========================================
     function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
