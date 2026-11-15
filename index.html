@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataFlow SaaS — Pro JSON to CSV Converter</title>
+  <title>DataFlow SaaS — Pro Developer Utilities & JSON Suite</title>
   <!-- Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -41,9 +41,19 @@
     
     /* Main Container */
     .container { max-width: 1100px; width: 100%; margin: 2rem auto; padding: 0 1rem; flex: 1; }
-    .header { text-align: center; margin-bottom: 2rem; }
-    .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .header { text-align: center; margin-bottom: 1.5rem; }
+    .header h1 { font-size: 2rem; margin-bottom: 0.4rem; }
     .header p { color: var(--muted); }
+
+    /* Tool Switcher Tabs */
+    .tool-tabs {
+      display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--muted);
+      padding: 0.6rem 1.5rem; border-radius: 30px; font-weight: 600; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
     /* Toolbar */
     .toolbar {
@@ -85,7 +95,6 @@
     }
     .input-group input:focus { outline: 1px solid var(--primary); }
 
-    /* Forgot Password Link */
     .forgot-link {
       display: inline-flex; align-items: center; gap: 0.35rem;
       color: #60a5fa; font-size: 0.85rem; cursor: pointer;
@@ -124,34 +133,70 @@
   <!-- Main Workspace -->
   <div class="container">
     <div class="header">
-      <h1>Nested JSON to CSV Converter</h1>
-      <p>Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.</p>
+      <h1 id="mainTitle">Nested JSON to CSV Converter</h1>
+      <p id="mainSubtitle">Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.</p>
     </div>
 
-    <div class="toolbar">
-      <div class="tool-group">
-        <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileUpload(event)" />
-        <button class="btn-outline" onclick="document.getElementById('fileInput').click()">📁 Upload .JSON</button>
-        <button class="btn-outline" onclick="loadSample()">✨ Load Sample</button>
-        <button class="btn-outline" onclick="clearAll()">🗑️ Clear</button>
+    <!-- Tool Switcher Tabs -->
+    <div class="tool-tabs">
+      <button class="tab-btn active" id="tabCsv" onclick="switchTool('csv')">📊 JSON to CSV</button>
+      <button class="tab-btn" id="tabFormat" onclick="switchTool('format')">🧹 JSON Formatter & Validator</button>
+    </div>
+
+    <!-- TOOL 1: JSON TO CSV -->
+    <div id="toolCsvSection">
+      <div class="toolbar">
+        <div class="tool-group">
+          <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileUpload(event)" />
+          <button class="btn-outline" onclick="document.getElementById('fileInput').click()">📁 Upload .JSON</button>
+          <button class="btn-outline" onclick="loadSampleCsv()">✨ Load Sample</button>
+          <button class="btn-outline" onclick="clearAllCsv()">🗑️ Clear</button>
+        </div>
+        <div class="tool-group">
+          <button class="btn-primary" onclick="convertJsonToCsv()">⚡ Convert to CSV</button>
+          <button class="btn-outline" onclick="copyCsv()">📋 Copy CSV</button>
+          <button class="btn-success" onclick="downloadCsv()">⬇️ Download CSV</button>
+        </div>
       </div>
-      <div class="tool-group">
-        <button class="btn-primary" onclick="convertJsonToCsv()">⚡ Convert to CSV</button>
-        <button class="btn-outline" onclick="copyCsv()">📋 Copy CSV</button>
-        <button class="btn-success" onclick="downloadCsv()">⬇️ Download CSV</button>
+
+      <div class="grid">
+        <div class="box">
+          <label>INPUT JSON</label>
+          <textarea id="jsonInput" placeholder='Paste your JSON array or object here...'></textarea>
+        </div>
+        <div class="box">
+          <label>OUTPUT CSV (FLATTENED)</label>
+          <textarea id="csvOutput" readonly placeholder='Your converted CSV will appear here...'></textarea>
+        </div>
       </div>
     </div>
 
-    <div class="grid">
-      <div class="box">
-        <label>INPUT JSON</label>
-        <textarea id="jsonInput" placeholder='Paste your JSON array or object here...'></textarea>
+    <!-- TOOL 2: JSON FORMATTER & VALIDATOR -->
+    <div id="toolFormatSection" style="display: none;">
+      <div class="toolbar">
+        <div class="tool-group">
+          <button class="btn-outline" onclick="loadSampleFormat()">✨ Load Sample</button>
+          <button class="btn-outline" onclick="clearAllFormat()">🗑️ Clear</button>
+        </div>
+        <div class="tool-group">
+          <button class="btn-primary" onclick="formatJson()">✨ Format / Beautify</button>
+          <button class="btn-outline" onclick="minifyJson()">📦 Minify</button>
+          <button class="btn-outline" onclick="copyFormatted()">📋 Copy Result</button>
+        </div>
       </div>
-      <div class="box">
-        <label>OUTPUT CSV (FLATTENED)</label>
-        <textarea id="csvOutput" readonly placeholder='Your converted CSV will appear here...'></textarea>
+
+      <div class="grid">
+        <div class="box">
+          <label>RAW JSON INPUT</label>
+          <textarea id="formatInput" placeholder='Paste messy or unformatted JSON here...'></textarea>
+        </div>
+        <div class="box">
+          <label>FORMATTED / VALIDATED OUTPUT</label>
+          <textarea id="formatOutput" readonly placeholder='Clean formatted JSON or validation results...'></textarea>
+        </div>
       </div>
     </div>
+
   </div>
 
   <!-- Auth & Verification Portal Modal -->
@@ -160,7 +205,6 @@
       <h2 id="modalTitle">Create Account</h2>
       <p id="modalSubtitle">Sign up to unlock unlimited nested conversions.</p>
 
-      <!-- VIEW 1: Standard Login / Sign Up -->
       <div id="standardAuthView">
         <div class="input-group">
           <label>Email Address</label>
@@ -178,9 +222,7 @@
         <button class="btn-primary" style="width: 100%;" id="authSubmitBtn" onclick="handleAuth()">Sign Up</button>
       </div>
 
-      <!-- VIEW 2: Forgot Password / Email Code Portal -->
       <div id="forgotPortalView" style="display: none;">
-        <!-- Step A: Enter Email to Send Code -->
         <div id="stepSendCode">
           <div class="input-group">
             <label>Enter Your Email Address</label>
@@ -189,7 +231,6 @@
           <button class="btn-primary" style="width: 100%;" onclick="sendVerificationCode()">📩 Send Verification Code</button>
         </div>
 
-        <!-- Step B: Enter Code + New Password & Confirm -->
         <div id="stepVerifyCode" style="display: none;">
           <div class="input-group">
             <label>6-Digit Verification Code (Check Email)</label>
@@ -209,9 +250,6 @@
   </div>
 
   <script>
-    // ==========================================
-    // SUPABASE CONFIGURATION
-    // ==========================================
     const SUPABASE_URL = 'https://wbpwvnjfwjlaangnqcbm.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_j44_LPj3_3Bc3-7lUYDvjw_L4-Bcynj';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -239,8 +277,6 @@
       authMode = mode;
       document.getElementById('authModal').style.display = 'flex';
       document.getElementById('authMessage').textContent = '';
-      
-      // Reset to Standard View
       document.getElementById('standardAuthView').style.display = 'block';
       document.getElementById('forgotPortalView').style.display = 'none';
 
@@ -259,7 +295,6 @@
       document.getElementById('authModal').style.display = 'none';
     }
 
-    // Switch to Forgot Password / Email Verification Code Portal
     function switchToForgotPortal() {
       document.getElementById('standardAuthView').style.display = 'none';
       document.getElementById('forgotPortalView').style.display = 'block';
@@ -270,12 +305,10 @@
       document.getElementById('modalTitle').textContent = 'Email Verification Portal';
       document.getElementById('modalSubtitle').textContent = 'Enter your email to receive a random verification code.';
       
-      // Pre-fill email if already typed
       const typedEmail = document.getElementById('authEmail').value.trim();
       if (typedEmail) document.getElementById('recoveryEmail').value = typedEmail;
     }
 
-    // Step A: Send Random 6-Digit Code to User's Email
     async function sendVerificationCode() {
       const email = document.getElementById('recoveryEmail').value.trim();
       const msgEl = document.getElementById('authMessage');
@@ -306,7 +339,6 @@
       }
     }
 
-    // Step B: Verify Code + Set Password & Confirm Account
     async function confirmCodeAndAccount() {
       const email = document.getElementById('recoveryEmail').value.trim();
       const token = document.getElementById('otpCodeInput').value.trim();
@@ -347,7 +379,6 @@
       setTimeout(closeModal, 1000);
     }
 
-    // Standard Sign Up / Login
     async function handleAuth() {
       const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPassword').value.trim();
@@ -385,9 +416,26 @@
       updateNavbar(null);
     }
 
-    // ==========================================
-    // NESTED JSON FLATTENER & CONVERTER
-    // ==========================================
+    // Switch between tools
+    function switchTool(tool) {
+      if (tool === 'csv') {
+        document.getElementById('tabCsv').classList.add('active');
+        document.getElementById('tabFormat').classList.remove('active');
+        document.getElementById('toolCsvSection').style.display = 'block';
+        document.getElementById('toolFormatSection').style.display = 'none';
+        document.getElementById('mainTitle').textContent = 'Nested JSON to CSV Converter';
+        document.getElementById('mainSubtitle').textContent = 'Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.';
+      } else {
+        document.getElementById('tabFormat').classList.add('active');
+        document.getElementById('tabCsv').classList.remove('active');
+        document.getElementById('toolCsvSection').style.display = 'none';
+        document.getElementById('toolFormatSection').style.display = 'block';
+        document.getElementById('mainTitle').textContent = 'JSON Formatter & Validator';
+        document.getElementById('mainSubtitle').textContent = 'Beautify, validate, and minify your JSON data instantly.';
+      }
+    }
+
+    // Tool 1 Logic: JSON to CSV
     function flattenObject(obj, prefix = '', res = {}) {
       for (let key in obj) {
         if (!obj.hasOwnProperty(key)) continue;
@@ -406,14 +454,11 @@
     function convertJsonToCsv() {
       const raw = document.getElementById('jsonInput').value.trim();
       if (!raw) return alert('Please paste JSON data first!');
-
       try {
         let parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) parsed = [parsed];
-
         const flattenedRows = parsed.map(item => flattenObject(item));
         const headers = [...new Set(flattenedRows.flatMap(row => Object.keys(row)))];
-
         const csvLines = [headers.join(',')];
         for (const row of flattenedRows) {
           const values = headers.map(header => {
@@ -422,7 +467,6 @@
           });
           csvLines.push(values.join(','));
         }
-
         document.getElementById('csvOutput').value = csvLines.join('\n');
       } catch (err) {
         alert('Invalid JSON format: ' + err.message);
@@ -459,7 +503,7 @@
       URL.revokeObjectURL(url);
     }
 
-    function loadSample() {
+    function loadSampleCsv() {
       const sample = [
         { id: 101, user: { name: "Ali Khan", contact: { city: "Lahore", phone: "0300-1234567" } }, plan: "Pro" },
         { id: 102, user: { name: "Sara Ahmed", contact: { city: "Karachi", phone: "0321-7654321" } }, plan: "Free" }
@@ -468,9 +512,50 @@
       convertJsonToCsv();
     }
 
-    function clearAll() {
+    function clearAllCsv() {
       document.getElementById('jsonInput').value = '';
       document.getElementById('csvOutput').value = '';
+    }
+
+    // Tool 2 Logic: JSON Formatter & Validator
+    function formatJson() {
+      const raw = document.getElementById('formatInput').value.trim();
+      if (!raw) return alert('Please enter JSON to format!');
+      try {
+        const parsed = JSON.parse(raw);
+        document.getElementById('formatOutput').value = JSON.stringify(parsed, null, 2);
+      } catch (err) {
+        document.getElementById('formatOutput').value = '❌ INVALID JSON ERROR:\n' + err.message;
+      }
+    }
+
+    function minifyJson() {
+      const raw = document.getElementById('formatInput').value.trim();
+      if (!raw) return alert('Please enter JSON to minify!');
+      try {
+        const parsed = JSON.parse(raw);
+        document.getElementById('formatOutput').value = JSON.stringify(parsed);
+      } catch (err) {
+        document.getElementById('formatOutput').value = '❌ INVALID JSON ERROR:\n' + err.message;
+      }
+    }
+
+    function copyFormatted() {
+      const text = document.getElementById('formatOutput').value;
+      if (!text) return alert('Nothing to copy!');
+      navigator.clipboard.writeText(text);
+      alert('Result copied to clipboard!');
+    }
+
+    function loadSampleFormat() {
+      const sample = {"name":"Azan","role":"Developer","skills":["Python","JavaScript","SQL"],"active":true};
+      document.getElementById('formatInput').value = JSON.stringify(sample);
+      formatJson();
+    }
+
+    function clearAllFormat() {
+      document.getElementById('formatInput').value = '';
+      document.getElementById('formatOutput').value = '';
     }
   </script>
 </body>
