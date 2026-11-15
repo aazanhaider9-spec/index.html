@@ -55,11 +55,11 @@
     
     /* Main Container */
     .container { max-width: 1100px; width: 100%; margin: 2rem auto; padding: 0 1rem; flex: 1; }
-    .header { text-align: center; margin-bottom: 1.5rem; }
+    .header { text-align: center; margin-bottom: 1.2rem; }
     .header h1 { font-size: 2rem; margin-bottom: 0.4rem; }
     .header p { color: var(--muted); }
 
-    /* AdSense Placeholder Banner (Monetization Layout Ready) */
+    /* AdSense Placeholder Banners (Monetization Layout Ready) */
     .ad-banner {
       background: rgba(30, 41, 59, 0.5); border: 2px dashed var(--border);
       border-radius: 8px; padding: 0.8rem; text-align: center; color: var(--muted);
@@ -158,9 +158,9 @@
       <p id="mainSubtitle">Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.</p>
     </div>
 
-    <!-- AdSense / Ad Banner Space (Ready for Earning) -->
+    <!-- AdSense Top Banner Slot -->
     <div class="ad-banner">
-      📢 AdSpace Banner (Google AdSense Ready - 728x90)
+      📢 AdSpace Banner (Google AdSense Ready - Top Slot)
     </div>
 
     <!-- Tool Switcher Tabs -->
@@ -221,6 +221,11 @@
           <textarea id="formatOutput" readonly placeholder='Clean formatted JSON or validation results...'></textarea>
         </div>
       </div>
+    </div>
+
+    <!-- AdSense Bottom Banner Slot -->
+    <div class="ad-banner" style="margin-top: 1.5rem;">
+      📢 AdSpace Banner (Google AdSense Ready - Bottom Slot)
     </div>
 
   </div>
@@ -484,3 +489,102 @@
         const flattenedRows = parsed.map(item => flattenObject(item));
         const headers = [...new Set(flattenedRows.flatMap(row => Object.keys(row)))];
         const csvLines = [headers.join(',')];
+        for (const row of flattenedRows) {
+          const values = headers.map(header => {
+            const val = row[header] === undefined || row[header] === null ? '' : String(row[header]);
+            return `"${val.replace(/"/g, '""')}"`;
+          });
+          csvLines.push(values.join(','));
+        }
+        document.getElementById('csvOutput').value = csvLines.join('\n');
+      } catch (err) {
+        alert('Invalid JSON format: ' + err.message);
+      }
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('jsonInput').value = e.target.result;
+        convertJsonToCsv();
+      };
+      reader.readAsText(file);
+    }
+
+    function copyCsv() {
+      const csv = document.getElementById('csvOutput').value;
+      if (!csv) return alert('Nothing to copy!');
+      navigator.clipboard.writeText(csv);
+      alert('CSV copied to clipboard!');
+    }
+
+    function downloadCsv() {
+      const csv = document.getElementById('csvOutput').value;
+      if (!csv) return alert('Convert JSON to CSV first!');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dataflow_export.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadSampleCsv() {
+      const sample = [
+        { id: 101, user: { name: "Ali Khan", contact: { city: "Lahore", phone: "0300-1234567" } }, plan: "Pro" },
+        { id: 102, user: { name: "Sara Ahmed", contact: { city: "Karachi", phone: "0321-7654321" } }, plan: "Free" }
+      ];
+      document.getElementById('jsonInput').value = JSON.stringify(sample, null, 2);
+      convertJsonToCsv();
+    }
+
+    function clearAllCsv() {
+      document.getElementById('jsonInput').value = '';
+      document.getElementById('csvOutput').value = '';
+    }
+
+    function formatJson() {
+      const raw = document.getElementById('formatInput').value.trim();
+      if (!raw) return alert('Please enter JSON to format!');
+      try {
+        const parsed = JSON.parse(raw);
+        document.getElementById('formatOutput').value = JSON.stringify(parsed, null, 2);
+      } catch (err) {
+        document.getElementById('formatOutput').value = '❌ INVALID JSON ERROR:\n' + err.message;
+      }
+    }
+
+    function minifyJson() {
+      const raw = document.getElementById('formatInput').value.trim();
+      if (!raw) return alert('Please enter JSON to minify!');
+      try {
+        const parsed = JSON.parse(raw);
+        document.getElementById('formatOutput').value = JSON.stringify(parsed);
+      } catch (err) {
+        document.getElementById('formatOutput').value = '❌ INVALID JSON ERROR:\n' + err.message;
+      }
+    }
+
+    function copyFormatted() {
+      const text = document.getElementById('formatOutput').value;
+      if (!text) return alert('Nothing to copy!');
+      navigator.clipboard.writeText(text);
+      alert('Result copied to clipboard!');
+    }
+
+    function loadSampleFormat() {
+      const sample = {"name":"Azan","role":"Developer","skills":["Python","JavaScript","SQL"],"active":true};
+      document.getElementById('formatInput').value = JSON.stringify(sample);
+      formatJson();
+    }
+
+    function clearAllFormat() {
+      document.getElementById('formatInput').value = '';
+      document.getElementById('formatOutput').value = '';
+    }
+  </script>
+</body>
+</html>
