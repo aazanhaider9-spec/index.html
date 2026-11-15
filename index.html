@@ -258,7 +258,7 @@
       <div class="grid">
         <div class="box">
           <div class="box-header"><label>DESCRIBE WHAT YOU WANT THE SCRIPT TO DO</label></div>
-          <textarea id="scriptPrompt" placeholder='e.g., Write a python script that parses a log file, counts error frequencies, and outputs summary...'></textarea>
+          <textarea id="scriptPrompt" placeholder='e.g., Write a python script that reads server access logs using regex...'></textarea>
         </div>
         <div class="box">
           <div class="box-header">
@@ -653,21 +653,23 @@
       const lowerPrompt = prompt.toLowerCase();
 
       if (lang === 'python') {
-        if (lowerPrompt.includes('circle') || lowerPrompt.includes('draw') || lowerPrompt.includes('shape')) {
-          generated = `# AI Scripter Engine (Python Turtle Graphics)\n# Task: ${prompt}\n\nimport turtle\n\ndef draw_graphics():\n    print("Initializing turtle graphics window...")\n    print("Drawing orange circle with radius 100...")\n    print("Status: Success! Shape drawn.")\n\nif __name__ == "__main__":\n    draw_graphics()\n`;
+        if (lowerPrompt.includes('circle') || lowerPrompt.includes('draw')) {
+          generated = `# AI Scripter Engine (Python Turtle Graphics)\n\nimport turtle\n\ndef draw_graphics():\n    print("[INFO] Initializing turtle graphics...")\n    print("[SUCCESS] Orange circle drawn successfully.")\n\nif __name__ == "__main__":\n    draw_graphics()\n`;
+        } else if (lowerPrompt.includes('log') || lowerPrompt.includes('regex') || lowerPrompt.includes('parse')) {
+          generated = `# AI Scripter Engine (Log Parser & Regex)\n\nimport re\nimport json\n\ndef parse_logs():\n    print("[INFO] Scanning server access logs...")\n    print("[PARSING] Extracting IP addresses & 404/500 error codes...")\n    summary = {"total_scanned": 1250, "errors_filtered": 42, "status": "success"}\n    print(json.dumps(summary, indent=4))\n\nif __name__ == "__main__":\n    parse_logs()\n`;
         } else {
-          generated = `# AI Scripter Engine (Python Automation)\n# Task: ${prompt}\n\ndef main():\n    print("[INFO] Initializing Python execution runtime...")\n    print("[RESULT] Executed successfully for task: '${prompt}'")\n    print('{"status": "success", "code": 200}')\n\nif __name__ == "__main__":\n    main()\n`;
+          generated = `# AI Scripter Engine (Python Automation)\n\ndef main():\n    print("[INFO] Initializing Python execution runtime...")\n    print("[RESULT] Automation script executed successfully.")\n    print('{"status": "success", "code": 200}')\n\nif __name__ == "__main__":\n    main()\n`;
         }
       } else if (lang === 'javascript') {
-        generated = `// AI Scripter Engine (Node.js)\n// Task: ${prompt}\n\nfunction executeTask() {\n    console.log("[INFO] Running JavaScript task...");\n    console.log("[RESULT] Task executed successfully: '${prompt}'");\n    console.log(JSON.stringify({ status: "success", timestamp: Date.now() }, null, 2));\n}\n\nexecuteTask();\n`;
+        generated = `// AI Scripter Engine (Node.js)\n\nfunction executeTask() {\n    console.log("[INFO] Running Node.js automation...");\n    console.log("[RESULT] Task executed successfully with status 200.");\n}\n\nexecuteTask();\n`;
       } else if (lang === 'cpp') {
-        generated = `/* AI Scripter Engine (C++)\n   Task: ${prompt} */\n\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "[INFO] Executing C++ compiled task..." << endl;\n    cout << "[RESULT] Task completed successfully!" << endl;\n    return 0;\n}\n`;
+        generated = `/* AI Scripter Engine (C++) */\n\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "[INFO] Executing C++ compiled task..." << endl;\n    cout << "[RESULT] Task completed successfully!" << endl;\n    return 0;\n}\n`;
       } else if (lang === 'rust') {
-        generated = `// AI Scripter Engine (Rust)\n// Task: ${prompt}\n\nfn main() {\n    println!("[INFO] Executing Rust binary task...");\n    println!("[RESULT] Task completed successfully!");\n}\n`;
-    }
+        generated = `// AI Scripter Engine (Rust)\n\nfn main() {\n    println!("[INFO] Executing Rust binary task...");\n    println!("[RESULT] Task completed successfully!");\n}\n`;
+      }
 
       document.getElementById('scriptOutput').value = generated;
-      document.getElementById('terminalConsole').textContent = '> Script generated successfully. Click "Run Code" to execute.';
+      document.getElementById('terminalConsole5').textContent = '> Script generated successfully. Click "Run Code" to execute.';
     }
 
     function runScriptLocally() {
@@ -705,15 +707,15 @@
         }
 
         if (!simulatedOutput) {
-          simulatedOutput = `> Script executed with exit code 0 (No output statements found).`;
+          simulatedOutput = `> Script executed with exit code 0.`;
         }
 
         consoleEl.textContent = simulatedOutput + `\n[Process completed successfully]`;
-      }, 400);
+      }, 350);
     }
 
     function loadSampleScriptReq() {
-      document.getElementById('scriptPrompt').value = 'Write a python script that draws an orange colored circle using turtle.';
+      document.getElementById('scriptPrompt').value = 'Write a python script that reads server access logs, parses IP addresses and error codes using Regular Expressions.';
       generateScript();
     }
 
