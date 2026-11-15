@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataFlow SaaS — Pro Developer Utilities & JSON Suite</title>
+  
+  <!-- SEO OPTIMIZATION & META TAGS -->
+  <title>DataFlow SaaS — Free Pro JSON to CSV Converter & JSON Formatter</title>
+  <meta name="description" content="Free online tool to convert nested JSON to CSV, format, validate, and minify JSON instantly. Fast, secure, and built for developers and data analysts." />
+  <meta name="keywords" content="json to csv converter, nested json converter, json formatter, json validator, online developer tools, free micro saas" />
+  <meta name="author" content="DataFlow SaaS" />
+  
+  <!-- Open Graph / Social Media Meta Tags -->
+  <meta property="og:title" content="DataFlow SaaS — Developer Utilities Suite" />
+  <meta property="og:description" content="Convert complex nested JSON to CSV and format JSON files instantly in your browser." />
+  <meta property="og:type" content="website" />
+
   <!-- Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -416,7 +427,6 @@
       updateNavbar(null);
     }
 
-    // Switch between tools
     function switchTool(tool) {
       if (tool === 'csv') {
         document.getElementById('tabCsv').classList.add('active');
@@ -435,7 +445,6 @@
       }
     }
 
-    // Tool 1 Logic: JSON to CSV
     function flattenObject(obj, prefix = '', res = {}) {
       for (let key in obj) {
         if (!obj.hasOwnProperty(key)) continue;
@@ -517,7 +526,6 @@
       document.getElementById('csvOutput').value = '';
     }
 
-    // Tool 2 Logic: JSON Formatter & Validator
     function formatJson() {
       const raw = document.getElementById('formatInput').value.trim();
       if (!raw) return alert('Please enter JSON to format!');
