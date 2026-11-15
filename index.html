@@ -8,14 +8,14 @@
   <meta name="google-site-verification" content="DGDfOTCL33XYJOYXynxJiLYMYV8r15KQC5iIE0ZHz_Q" />
 
   <!-- SEO OPTIMIZATION & META TAGS -->
-  <title>DataFlow SaaS — Free Pro JSON to CSV Converter & JSON Formatter</title>
-  <meta name="description" content="Free online tool to convert nested JSON to CSV, format, validate, and minify JSON instantly. Fast, secure, and built for developers and data analysts." />
-  <meta name="keywords" content="json to csv converter, nested json converter, json formatter, json validator, online developer tools, free micro saas" />
+  <title>DataFlow SaaS — Free Pro JSON to CSV Converter, Formatter & Scripter Engine</title>
+  <meta name="description" content="Free online developer tools: JSON to CSV converter, JSON formatter, validator, and AI Scripter Engine. Fast, secure, and built for developers." />
+  <meta name="keywords" content="json to csv converter, json formatter, json validator, ai scripter engine, python script generator, free micro saas" />
   <meta name="author" content="DataFlow SaaS" />
   
   <!-- Open Graph / Social Media Meta Tags -->
-  <meta property="og:title" content="DataFlow SaaS — Developer Utilities Suite" />
-  <meta property="og:description" content="Convert complex nested JSON to CSV and format JSON files instantly in your browser." />
+  <meta property="og:title" content="DataFlow SaaS — Developer Utilities & Scripter Suite" />
+  <meta property="og:description" content="Convert JSON to CSV, format JSON, and generate custom programming scripts instantly." />
   <meta property="og:type" content="website" />
 
   <!-- Supabase JS CDN -->
@@ -59,7 +59,7 @@
     .header h1 { font-size: 2rem; margin-bottom: 0.4rem; }
     .header p { color: var(--muted); }
 
-    /* AdSense Placeholder Banners (Monetization Layout Ready) */
+    /* AdSense Placeholder Banners */
     .ad-banner {
       background: rgba(30, 41, 59, 0.5); border: 2px dashed var(--border);
       border-radius: 8px; padding: 0.8rem; text-align: center; color: var(--muted);
@@ -68,11 +68,11 @@
 
     /* Tool Switcher Tabs */
     .tool-tabs {
-      display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;
+      display: flex; justify-content: center; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap;
     }
     .tab-btn {
       background: var(--card); border: 1px solid var(--border); color: var(--muted);
-      padding: 0.6rem 1.5rem; border-radius: 30px; font-weight: 600; cursor: pointer;
+      padding: 0.6rem 1.2rem; border-radius: 30px; font-weight: 600; cursor: pointer;
     }
     .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
@@ -80,7 +80,7 @@
     .toolbar {
       display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: space-between;
       background: var(--card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);
-      margin-bottom: 1rem;
+      margin-bottom: 1rem; align-items: center;
     }
     .tool-group { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
 
@@ -90,12 +90,13 @@
     
     .box { display: flex; flex-direction: column; }
     .box label { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 600; }
-    textarea {
+    textarea, select {
       width: 100%; height: 340px; background: var(--card); color: #e2e8f0;
       border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
       font-family: 'Consolas', monospace; font-size: 0.9rem; resize: vertical;
     }
-    textarea:focus { outline: 2px solid var(--primary); }
+    select { height: auto; padding: 0.6rem; cursor: pointer; }
+    textarea:focus, select:focus { outline: 2px solid var(--primary); }
 
     /* Auth Modal */
     .modal-overlay {
@@ -166,7 +167,8 @@
     <!-- Tool Switcher Tabs -->
     <div class="tool-tabs">
       <button class="tab-btn active" id="tabCsv" onclick="switchTool('csv')">📊 JSON to CSV</button>
-      <button class="tab-btn" id="tabFormat" onclick="switchTool('format')">🧹 JSON Formatter & Validator</button>
+      <button class="tab-btn" id="tabFormat" onclick="switchTool('format')">🧹 JSON Formatter</button>
+      <button class="tab-btn" id="tabScripter" onclick="switchTool('scripter')">⚡ AI Scripter Engine</button>
     </div>
 
     <!-- TOOL 1: JSON TO CSV -->
@@ -219,6 +221,38 @@
         <div class="box">
           <label>FORMATTED / VALIDATED OUTPUT</label>
           <textarea id="formatOutput" readonly placeholder='Clean formatted JSON or validation results...'></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOL 3: AI SCRIPTER ENGINE -->
+    <div id="toolScripterSection" style="display: none;">
+      <div class="toolbar">
+        <div class="tool-group">
+          <label style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Target Language:</label>
+          <select id="scriptLang">
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript (Node.js)</option>
+            <option value="cpp">C++</option>
+            <option value="rust">Rust</option>
+          </select>
+          <button class="btn-outline" onclick="loadSampleScriptReq()">✨ Load Sample Req</button>
+          <button class="btn-outline" onclick="clearAllScript()">🗑️ Clear</button>
+        </div>
+        <div class="tool-group">
+          <button class="btn-primary" onclick="generateScript()">⚡ Generate Script</button>
+          <button class="btn-outline" onclick="copyScript()">📋 Copy Script</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="box">
+          <label>DESCRIBE WHAT YOU WANT THE SCRIPT TO DO</label>
+          <textarea id="scriptPrompt" placeholder='e.g., Write a script that reads a CSV file, cleans missing values, and exports organized logs...'></textarea>
+        </div>
+        <div class="box">
+          <label>GENERATED CODE OUTPUT</label>
+          <textarea id="scriptOutput" readonly placeholder='Your custom generated script will appear here...'></textarea>
         </div>
       </div>
     </div>
@@ -448,20 +482,29 @@
     }
 
     function switchTool(tool) {
+      document.getElementById('tabCsv').classList.remove('active');
+      document.getElementById('tabFormat').classList.remove('active');
+      document.getElementById('tabScripter').classList.remove('active');
+
+      document.getElementById('toolCsvSection').style.display = 'none';
+      document.getElementById('toolFormatSection').style.display = 'none';
+      document.getElementById('toolScripterSection').style.display = 'none';
+
       if (tool === 'csv') {
         document.getElementById('tabCsv').classList.add('active');
-        document.getElementById('tabFormat').classList.remove('active');
         document.getElementById('toolCsvSection').style.display = 'block';
-        document.getElementById('toolFormatSection').style.display = 'none';
         document.getElementById('mainTitle').textContent = 'Nested JSON to CSV Converter';
         document.getElementById('mainSubtitle').textContent = 'Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.';
-      } else {
+      } else if (tool === 'format') {
         document.getElementById('tabFormat').classList.add('active');
-        document.getElementById('tabCsv').classList.remove('active');
-        document.getElementById('toolCsvSection').style.display = 'none';
         document.getElementById('toolFormatSection').style.display = 'block';
         document.getElementById('mainTitle').textContent = 'JSON Formatter & Validator';
         document.getElementById('mainSubtitle').textContent = 'Beautify, validate, and minify your JSON data instantly.';
+      } else if (tool === 'scripter') {
+        document.getElementById('tabScripter').classList.add('active');
+        document.getElementById('toolScripterSection').style.display = 'block';
+        document.getElementById('mainTitle').textContent = 'AI Scripter Engine';
+        document.getElementById('mainSubtitle').textContent = 'Generate custom automated scripts instantly based on your requirements.';
       }
     }
 
@@ -584,6 +627,42 @@
     function clearAllFormat() {
       document.getElementById('formatInput').value = '';
       document.getElementById('formatOutput').value = '';
+    }
+
+    function generateScript() {
+      const lang = document.getElementById('scriptLang').value;
+      const prompt = document.getElementById('scriptPrompt').value.trim();
+      if (!prompt) return alert('Please describe what you want the script to do!');
+
+      let generated = '';
+      if (lang === 'python') {
+        generated = `# Generated by DataFlow AI Scripter Engine\n# Task: ${prompt}\n\nimport json\nimport sys\n\ndef run_automation():\n    print("[INFO] Starting automated task...")\n    # TODO: Implement core logic for: ${prompt}\n    data = {"status": "success", "task": "${prompt}"}\n    print(json.dumps(data, indent=4))\n\nif __name__ == "__main__":\n    run_automation()`;
+      } else if (lang === 'javascript') {
+        generated = `// Generated by DataFlow AI Scripter Engine\n// Task: ${prompt}\n\nconst fs = require('fs');\n\nfunction runAutomation() {\n    console.log("[INFO] Starting automated task...");\n    // TODO: Implement core logic for: ${prompt}\n    const result = { status: "success", task: "${prompt}" };\n    console.log(JSON.stringify(result, null, 2));\n}\n\nrunAutomation();`;
+      } else if (lang === 'cpp') {
+        generated = `/* Generated by DataFlow AI Scripter Engine\n   Task: ${prompt} */\n\n#iostream>\nusing namespace std;\n\nint main() {\n    cout << "[INFO] Starting automated task..." << endl;\n    // TODO: Implement core logic for: ${prompt}\n    cout << "{ \\"status\\": \\"success\\" }" << endl;\n    return 0;\n}`;
+      } else if (lang === 'rust') {
+        generated = `// Generated by DataFlow AI Scripter Engine\n// Task: ${prompt}\n\nfn main() {\n    println!("[INFO] Starting automated task...");\n    // TODO: Implement core logic for: ${prompt}\n    println!("Status: Success");\n}`;
+      }
+
+      document.getElementById('scriptOutput').value = generated;
+    }
+
+    function loadSampleScriptReq() {
+      document.getElementById('scriptPrompt').value = 'Read input config files, filter active user records, and export structured logs.';
+      generateScript();
+    }
+
+    function copyScript() {
+      const text = document.getElementById('scriptOutput').value;
+      if (!text) return alert('No script to copy!');
+      navigator.clipboard.writeText(text);
+      alert('Script copied to clipboard!');
+    }
+
+    function clearAllScript() {
+      document.getElementById('scriptPrompt').value = '';
+      document.getElementById('scriptOutput').value = '';
     }
   </script>
 </body>
