@@ -8,7 +8,7 @@
   <meta name="google-site-verification" content="DGDfOTCL33XYJOYXynxJiLYMYV8r15KQC5iIE0ZHz_Q" />
 
   <!-- SEO OPTIMIZATION & META TAGS -->
-  <title>DataFlow SaaS — Free Pro JSON Converter, Formatter, Scripter & Photo to Excel</title>
+  <title>DataFlow SaaS — Error-Proof Pro JSON Converter, Formatter, Scripter & Photo to Excel</title>
   <meta name="description" content="Free online developer tools: JSON to CSV converter, JSON formatter, AI Scripter Engine, and Photo to Excel table extractor." />
   <meta name="keywords" content="json to csv converter, photo to excel, image to table extractor, ai scripter engine, free micro saas" />
   <meta name="author" content="DataFlow SaaS" />
@@ -29,6 +29,7 @@
       --primary: #3b82f6;
       --primary-hover: #2563eb;
       --success: #10b981;
+      --danger: #ef4444;
       --border: #334155;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -362,205 +363,268 @@
   <script>
     const SUPABASE_URL = 'https://wbpwvnjfwjlaangnqcbm.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_j44_LPj3_3Bc3-7lUYDvjw_L4-Bcynj';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabaseClient = null;
+
+    try {
+      if (typeof supabase !== 'undefined' && supabase.createClient) {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.warn("Supabase initialization error:", e);
+    }
 
     let authMode = 'signup';
 
     async function checkUser() {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      updateNavbar(user);
+      if (!supabaseClient) return;
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        updateNavbar(user);
+      } catch (err) {
+        console.warn("Auth check failed:", err);
+      }
     }
     checkUser();
 
     function updateNavbar(user) {
+      const loggedOut = document.getElementById('nav-logged-out');
+      const loggedIn = document.getElementById('nav-logged-in');
+      const emailDisplay = document.getElementById('user-email-display');
+      
+      if (!loggedOut || !loggedIn || !emailDisplay) return;
+
       if (user) {
-        document.getElementById('nav-logged-out').style.display = 'none';
-        document.getElementById('nav-logged-in').style.display = 'flex';
-        document.getElementById('user-email-display').textContent = user.email;
+        loggedOut.style.display = 'none';
+        loggedIn.style.display = 'flex';
+        emailDisplay.textContent = user.email || 'User';
       } else {
-        document.getElementById('nav-logged-out').style.display = 'flex';
-        document.getElementById('nav-logged-in').style.display = 'none';
+        loggedOut.style.display = 'flex';
+        loggedIn.style.display = 'none';
       }
     }
 
     function openModal(mode) {
       authMode = mode;
-      document.getElementById('authModal').style.display = 'flex';
-      document.getElementById('authMessage').textContent = '';
-      document.getElementById('standardAuthView').style.display = 'block';
-      document.getElementById('forgotPortalView').style.display = 'none';
+      const modal = document.getElementById('authModal');
+      if (modal) modal.style.display = 'flex';
+      
+      const msg = document.getElementById('authMessage');
+      if (msg) msg.textContent = '';
+
+      const stdView = document.getElementById('standardAuthView');
+      const forgotView = document.getElementById('forgotPortalView');
+      if (stdView) stdView.style.display = 'block';
+      if (forgotView) forgotView.style.display = 'none';
+
+      const title = document.getElementById('modalTitle');
+      const subtitle = document.getElementById('modalSubtitle');
+      const submitBtn = document.getElementById('authSubmitBtn');
 
       if (mode === 'signup') {
-        document.getElementById('modalTitle').textContent = 'Create Free Account';
-        document.getElementById('modalSubtitle').textContent = 'Join DataFlow SaaS to save and export data.';
-        document.getElementById('authSubmitBtn').textContent = 'Sign Up';
+        if (title) title.textContent = 'Create Free Account';
+        if (subtitle) subtitle.textContent = 'Join DataFlow SaaS to save and export data.';
+        if (submitBtn) submitBtn.textContent = 'Sign Up';
       } else {
-        document.getElementById('modalTitle').textContent = 'Welcome Back';
-        document.getElementById('modalSubtitle').textContent = 'Log in to your DataFlow SaaS account.';
-        document.getElementById('authSubmitBtn').textContent = 'Log In';
+        if (title) title.textContent = 'Welcome Back';
+        if (subtitle) subtitle.textContent = 'Log in to your DataFlow SaaS account.';
+        if (submitBtn) submitBtn.textContent = 'Log In';
       }
     }
 
     function closeModal() {
-      document.getElementById('authModal').style.display = 'none';
+      const modal = document.getElementById('authModal');
+      if (modal) modal.style.display = 'none';
     }
 
     function switchToForgotPortal() {
-      document.getElementById('standardAuthView').style.display = 'none';
-      document.getElementById('forgotPortalView').style.display = 'block';
-      document.getElementById('stepSendCode').style.display = 'block';
-      document.getElementById('stepVerifyCode').style.display = 'none';
-      document.getElementById('authMessage').textContent = '';
+      const stdView = document.getElementById('standardAuthView');
+      const forgotView = document.getElementById('forgotPortalView');
+      if (stdView) stdView.style.display = 'none';
+      if (forgotView) forgotView.style.display = 'block';
 
-      document.getElementById('modalTitle').textContent = 'Email Verification Portal';
-      document.getElementById('modalSubtitle').textContent = 'Enter your email to receive a random verification code.';
+      const stepSend = document.getElementById('stepSendCode');
+      const stepVerify = document.getElementById('stepVerifyCode');
+      if (stepSend) stepSend.style.display = 'block';
+      if (stepVerify) stepVerify.style.display = 'none';
+
+      const msg = document.getElementById('authMessage');
+      if (msg) msg.textContent = '';
+
+      const title = document.getElementById('modalTitle');
+      const subtitle = document.getElementById('modalSubtitle');
+      if (title) title.textContent = 'Email Verification Portal';
+      if (subtitle) subtitle.textContent = 'Enter your email to receive a random verification code.';
       
-      const typedEmail = document.getElementById('authEmail').value.trim();
-      if (typedEmail) document.getElementById('recoveryEmail').value = typedEmail;
+      const emailInput = document.getElementById('authEmail');
+      const recoveryInput = document.getElementById('recoveryEmail');
+      if (emailInput && recoveryInput && emailInput.value.trim()) {
+        recoveryInput.value = emailInput.value.trim();
+      }
     }
 
     async function sendVerificationCode() {
-      const email = document.getElementById('recoveryEmail').value.trim();
+      if (!supabaseClient) return alert('Supabase client not initialized.');
+      const emailEl = document.getElementById('recoveryEmail');
       const msgEl = document.getElementById('authMessage');
+      if (!emailEl || !msgEl) return;
 
+      const email = emailEl.value.trim();
       if (!email) {
-        msgEl.style.color = '#f87171';
+        msgEl.style.color = 'var(--danger)';
         msgEl.textContent = 'Please enter your email address first.';
         return;
       }
 
-      msgEl.style.color = '#94a3b8';
-      msgEl.textContent = 'Sending verification code to your email...';
+      msgEl.style.color = 'var(--muted)';
+      msgEl.textContent = 'Sending verification code...';
 
-      const { error } = await supabaseClient.auth.signInWithOtp({
-        email: email,
-        options: { shouldCreateUser: true }
-      });
+      try {
+        const { error } = await supabaseClient.auth.signInWithOtp({
+          email: email,
+          options: { shouldCreateUser: true }
+        });
 
-      if (error) {
-        msgEl.style.color = '#f87171';
-        msgEl.textContent = error.message;
-      } else {
-        msgEl.style.color = '#34d399';
-        msgEl.textContent = 'Code sent! Check your email inbox (or spam folder).';
-        document.getElementById('stepSendCode').style.display = 'none';
-        document.getElementById('stepVerifyCode').style.display = 'block';
-        document.getElementById('modalSubtitle').textContent = `Enter the code sent to ${email} and set your password.`;
+        if (error) {
+          msgEl.style.color = 'var(--danger)';
+          msgEl.textContent = error.message;
+        } else {
+          msgEl.style.color = 'var(--success)';
+          msgEl.textContent = 'Code sent! Check your inbox.';
+          const stepSend = document.getElementById('stepSendCode');
+          const stepVerify = document.getElementById('stepVerifyCode');
+          if (stepSend) stepSend.style.display = 'none';
+          if (stepVerify) stepVerify.style.display = 'block';
+        }
+      } catch (err) {
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = 'Network or connection error.';
       }
     }
 
     async function confirmCodeAndAccount() {
-      const email = document.getElementById('recoveryEmail').value.trim();
-      const token = document.getElementById('otpCodeInput').value.trim();
-      const newPassword = document.getElementById('newPasswordInput').value.trim();
+      if (!supabaseClient) return alert('Supabase client not initialized.');
+      const email = document.getElementById('recoveryEmail')?.value.trim();
+      const token = document.getElementById('otpCodeInput')?.value.trim();
+      const newPassword = document.getElementById('newPasswordInput')?.value.trim();
       const msgEl = document.getElementById('authMessage');
+      if (!msgEl) return;
 
       if (!token || token.length < 6) {
-        msgEl.style.color = '#f87171';
-        msgEl.textContent = 'Please enter the 6-digit code from your email.';
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = 'Please enter a valid 6-digit code.';
         return;
       }
       if (!newPassword || newPassword.length < 6) {
-        msgEl.style.color = '#f87171';
-        msgEl.textContent = 'Please enter a password (at least 6 characters).';
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = 'Password must be at least 6 characters.';
         return;
       }
 
-      msgEl.style.color = '#94a3b8';
-      msgEl.textContent = 'Verifying code and confirming account...';
+      msgEl.style.color = 'var(--muted)';
+      msgEl.textContent = 'Verifying code...';
 
-      const { data, error } = await supabaseClient.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'email'
-      });
+      try {
+        const { data, error } = await supabaseClient.auth.verifyOtp({
+          email: email,
+          token: token,
+          type: 'email'
+        });
 
-      if (error) {
-        msgEl.style.color = '#f87171';
-        msgEl.textContent = 'Invalid or expired code: ' + error.message;
-        return;
+        if (error) {
+          msgEl.style.color = 'var(--danger)';
+          msgEl.textContent = 'Invalid code: ' + error.message;
+          return;
+        }
+
+        await supabaseClient.auth.updateUser({ password: newPassword });
+        msgEl.style.color = 'var(--success)';
+        msgEl.textContent = 'Success! Logging you in...';
+        updateNavbar(data.user);
+        setTimeout(closeModal, 1000);
+      } catch (err) {
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = 'Verification failed.';
       }
-
-      await supabaseClient.auth.updateUser({ password: newPassword });
-
-      msgEl.style.color = '#34d399';
-      msgEl.textContent = 'Account verified & confirmed! Logging you in...';
-      updateNavbar(data.user);
-      setTimeout(closeModal, 1000);
     }
 
     async function handleAuth() {
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value.trim();
+      if (!supabaseClient) return alert('Supabase client not initialized.');
+      const email = document.getElementById('authEmail')?.value.trim();
+      const password = document.getElementById('authPassword')?.value.trim();
       const msgEl = document.getElementById('authMessage');
+      if (!msgEl) return;
 
       if (!email || !password) {
-        msgEl.style.color = '#f87171';
-        msgEl.textContent = 'Please enter both email and password.';
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = 'Please enter email and password.';
         return;
       }
 
-      msgEl.style.color = '#94a3b8';
+      msgEl.style.color = 'var(--muted)';
       msgEl.textContent = 'Processing...';
 
-      let result;
-      if (authMode === 'signup') {
-        result = await supabaseClient.auth.signUp({ email, password });
-      } else {
-        result = await supabaseClient.auth.signInWithPassword({ email, password });
-      }
+      try {
+        let result;
+        if (authMode === 'signup') {
+          result = await supabaseClient.auth.signUp({ email, password });
+        } else {
+          result = await supabaseClient.auth.signInWithPassword({ email, password });
+        }
 
-      if (result.error) {
-        msgEl.style.color = '#f87171';
-        msgEl.textContent = result.error.message;
-      } else {
-        msgEl.style.color = '#34d399';
-        msgEl.textContent = authMode === 'signup' ? 'Account created!' : 'Logged in!';
-        updateNavbar(result.data.user);
-        setTimeout(closeModal, 800);
+        if (result.error) {
+          msgEl.style.color = 'var(--danger)';
+          msgEl.textContent = result.error.message;
+        } else {
+          msgEl.style.color = 'var(--success)';
+          msgEl.textContent = authMode === 'signup' ? 'Account created successfully!' : 'Logged in successfully!';
+          updateNavbar(result.data.user);
+          setTimeout(closeModal, 800);
+        }
+      } catch (err) {
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = 'Authentication error occurred.';
       }
     }
 
     async function handleLogout() {
-      await supabaseClient.auth.signOut();
+      if (supabaseClient) await supabaseClient.auth.signOut();
       updateNavbar(null);
     }
 
     function switchTool(tool) {
-      document.getElementById('tabCsv').classList.remove('active');
-      document.getElementById('tabFormat').classList.remove('active');
-      document.getElementById('tabScripter').classList.remove('active');
-      document.getElementById('tabPhotoExcel').classList.remove('active');
+      const tabs = ['csv', 'format', 'scripter', 'photoExcel'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const sec = document.getElementById('tool' + t.charAt(0).toUpperCase() + t.slice(1) + 'Section');
+        if (btn) btn.classList.remove('active');
+        if (sec) sec.style.display = 'none';
+      });
 
-      document.getElementById('toolCsvSection').style.display = 'none';
-      document.getElementById('toolFormatSection').style.display = 'none';
-      document.getElementById('toolScripterSection').style.display = 'none';
-      document.getElementById('toolPhotoExcelSection').style.display = 'none';
+      const activeBtn = document.getElementById('tab' + tool.charAt(0).toUpperCase() + tool.slice(1));
+      const activeSec = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1) + 'Section');
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeSec) activeSec.style.display = 'block';
+
+      const mainTitle = document.getElementById('mainTitle');
+      const mainSubtitle = document.getElementById('mainSubtitle');
 
       if (tool === 'csv') {
-        document.getElementById('tabCsv').classList.add('active');
-        document.getElementById('toolCsvSection').style.display = 'block';
-        document.getElementById('mainTitle').textContent = 'Nested JSON to CSV Converter';
-        document.getElementById('mainSubtitle').textContent = 'Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.';
+        if (mainTitle) mainTitle.textContent = 'Nested JSON to CSV Converter';
+        if (mainSubtitle) mainSubtitle.textContent = 'Automatically flattens deep JSON objects into clean spreadsheet-ready CSV.';
       } else if (tool === 'format') {
-        document.getElementById('tabFormat').classList.add('active');
-        document.getElementById('toolFormatSection').style.display = 'block';
-        document.getElementById('mainTitle').textContent = 'JSON Formatter & Validator';
-        document.getElementById('mainSubtitle').textContent = 'Beautify, validate, and minify your JSON data instantly.';
+        if (mainTitle) mainTitle.textContent = 'JSON Formatter & Validator';
+        if (mainSubtitle) mainSubtitle.textContent = 'Beautify, validate, and minify your JSON data instantly.';
       } else if (tool === 'scripter') {
-        document.getElementById('tabScripter').classList.add('active');
-        document.getElementById('toolScripterSection').style.display = 'block';
-        document.getElementById('mainTitle').textContent = 'AI Scripter Engine';
-        document.getElementById('mainSubtitle').textContent = 'Generate custom automated scripts instantly based on your requirements.';
+        if (mainTitle) mainTitle.textContent = 'AI Scripter Engine';
+        if (mainSubtitle) mainSubtitle.textContent = 'Generate custom automated scripts instantly based on your requirements.';
       } else if (tool === 'photoExcel') {
-        document.getElementById('tabPhotoExcel').classList.add('active');
-        document.getElementById('toolPhotoExcelSection').style.display = 'block';
-        document.getElementById('mainTitle').textContent = 'Photo to Excel / Table Extractor';
-        document.getElementById('mainSubtitle').textContent = 'Extract tabular data from images or documents into clean spreadsheet CSV.';
+        if (mainTitle) mainTitle.textContent = 'Photo to Excel / Table Extractor';
+        if (mainSubtitle) mainSubtitle.textContent = 'Extract tabular data from images or documents into clean spreadsheet CSV.';
       }
     }
 
     function flattenObject(obj, prefix = '', res = {}) {
+      if (!obj || typeof obj !== 'object') return res;
       for (let key in obj) {
         if (!obj.hasOwnProperty(key)) continue;
         const propName = prefix ? `${prefix}.${key}` : key;
@@ -576,13 +640,27 @@
     }
 
     function convertJsonToCsv() {
-      const raw = document.getElementById('jsonInput').value.trim();
-      if (!raw) return alert('Please paste JSON data first!');
+      const inputEl = document.getElementById('jsonInput');
+      const outputEl = document.getElementById('csvOutput');
+      if (!inputEl || !outputEl) return;
+
+      const raw = inputEl.value.trim();
+      if (!raw) {
+        outputEl.value = '⚠️ Error: Input JSON box is empty.';
+        return;
+      }
+
       try {
         let parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) parsed = [parsed];
         const flattenedRows = parsed.map(item => flattenObject(item));
         const headers = [...new Set(flattenedRows.flatMap(row => Object.keys(row)))];
+        
+        if (headers.length === 0) {
+          outputEl.value = '⚠️ Error: No valid data fields found in JSON object.';
+          return;
+        }
+
         const csvLines = [headers.join(',')];
         for (const row of flattenedRows) {
           const values = headers.map(header => {
@@ -591,33 +669,39 @@
           });
           csvLines.push(values.join(','));
         }
-        document.getElementById('csvOutput').value = csvLines.join('\n');
+        outputEl.value = csvLines.join('\n');
       } catch (err) {
-        alert('Invalid JSON format: ' + err.message);
+        outputEl.value = '❌ INVALID JSON FORMAT ERROR:\n' + err.message;
       }
     }
 
     function handleFileUpload(event) {
-      const file = event.target.files[0];
+      const file = event.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = e => {
-        document.getElementById('jsonInput').value = e.target.result;
-        convertJsonToCsv();
+        const inputEl = document.getElementById('jsonInput');
+        if (inputEl) {
+          inputEl.value = e.target.result;
+          convertJsonToCsv();
+        }
+      };
+      reader.onerror = () => {
+        alert('Failed to read uploaded file.');
       };
       reader.readAsText(file);
     }
 
     function copyCsv() {
-      const csv = document.getElementById('csvOutput').value;
-      if (!csv) return alert('Nothing to copy!');
+      const csv = document.getElementById('csvOutput')?.value;
+      if (!csv || csv.startsWith('⚠️') || csv.startsWith('❌')) return alert('No valid CSV data to copy!');
       navigator.clipboard.writeText(csv);
-      alert('CSV copied to clipboard!');
+      alert('CSV copied to clipboard successfully!');
     }
 
     function downloadCsv() {
-      const csv = document.getElementById('csvOutput').value;
-      if (!csv) return alert('Convert JSON to CSV first!');
+      const csv = document.getElementById('csvOutput')?.value;
+      if (!csv || csv.startsWith('⚠️') || csv.startsWith('❌')) return alert('Please convert valid JSON to CSV first!');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -632,59 +716,89 @@
         { id: 101, user: { name: "Ali Khan", contact: { city: "Lahore", phone: "0300-1234567" } }, plan: "Pro" },
         { id: 102, user: { name: "Sara Ahmed", contact: { city: "Karachi", phone: "0321-7654321" } }, plan: "Free" }
       ];
-      document.getElementById('jsonInput').value = JSON.stringify(sample, null, 2);
-      convertJsonToCsv();
+      const inputEl = document.getElementById('jsonInput');
+      if (inputEl) {
+        inputEl.value = JSON.stringify(sample, null, 2);
+        convertJsonToCsv();
+      }
     }
 
     function clearAllCsv() {
-      document.getElementById('jsonInput').value = '';
-      document.getElementById('csvOutput').value = '';
+      const inputEl = document.getElementById('jsonInput');
+      const outputEl = document.getElementById('csvOutput');
+      if (inputEl) inputEl.value = '';
+      if (outputEl) outputEl.value = '';
     }
 
     function formatJson() {
-      const raw = document.getElementById('formatInput').value.trim();
-      if (!raw) return alert('Please enter JSON to format!');
+      const raw = document.getElementById('formatInput')?.value.trim();
+      const outputEl = document.getElementById('formatOutput');
+      if (!outputEl) return;
+
+      if (!raw) {
+        outputEl.value = '⚠️ Error: Input box is empty.';
+        return;
+      }
       try {
         const parsed = JSON.parse(raw);
-        document.getElementById('formatOutput').value = JSON.stringify(parsed, null, 2);
+        outputEl.value = JSON.stringify(parsed, null, 2);
       } catch (err) {
-        document.getElementById('formatOutput').value = '❌ INVALID JSON ERROR:\n' + err.message;
+        outputEl.value = '❌ INVALID JSON ERROR:\n' + err.message;
       }
     }
 
     function minifyJson() {
-      const raw = document.getElementById('formatInput').value.trim();
-      if (!raw) return alert('Please enter JSON to minify!');
+      const raw = document.getElementById('formatInput')?.value.trim();
+      const outputEl = document.getElementById('formatOutput');
+      if (!outputEl) return;
+
+      if (!raw) {
+        outputEl.value = '⚠️ Error: Input box is empty.';
+        return;
+      }
       try {
         const parsed = JSON.parse(raw);
-        document.getElementById('formatOutput').value = JSON.stringify(parsed);
+        outputEl.value = JSON.stringify(parsed);
       } catch (err) {
-        document.getElementById('formatOutput').value = '❌ INVALID JSON ERROR:\n' + err.message;
+        outputEl.value = '❌ INVALID JSON ERROR:\n' + err.message;
       }
     }
 
     function copyFormatted() {
-      const text = document.getElementById('formatOutput').value;
-      if (!text) return alert('Nothing to copy!');
+      const text = document.getElementById('formatOutput')?.value;
+      if (!text || text.startsWith('⚠️') || text.startsWith('❌')) return alert('No valid formatted JSON to copy!');
       navigator.clipboard.writeText(text);
       alert('Result copied to clipboard!');
     }
 
     function loadSampleFormat() {
       const sample = {"name":"Azan","role":"Developer","skills":["Python","JavaScript","SQL"],"active":true};
-      document.getElementById('formatInput').value = JSON.stringify(sample);
-      formatJson();
+      const inputEl = document.getElementById('formatInput');
+      if (inputEl) {
+        inputEl.value = JSON.stringify(sample);
+        formatJson();
+      }
     }
 
     function clearAllFormat() {
-      document.getElementById('formatInput').value = '';
-      document.getElementById('formatOutput').value = '';
+      const inputEl = document.getElementById('formatInput');
+      const outputEl = document.getElementById('formatOutput');
+      if (inputEl) inputEl.value = '';
+      if (outputEl) outputEl.value = '';
     }
 
     function generateScript() {
-      const lang = document.getElementById('scriptLang').value;
-      const prompt = document.getElementById('scriptPrompt').value.trim();
-      if (!prompt) return alert('Please describe what you want the script to do!');
+      const lang = document.getElementById('scriptLang')?.value || 'python';
+      const promptEl = document.getElementById('scriptPrompt');
+      const outputEl = document.getElementById('scriptOutput');
+      const consoleEl = document.getElementById('terminalConsole');
+      if (!promptEl || !outputEl || !consoleEl) return;
+
+      const prompt = promptEl.value.trim();
+      if (!prompt) {
+        alert('Please describe what you want the script to do first!');
+        return;
+      }
 
       let generated = '';
       const lowerPrompt = prompt.toLowerCase();
@@ -703,15 +817,19 @@
         generated = `/* AI Scripter Engine (C++) */\n\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "[INFO] Executing C++ compiled task..." << endl;\n    cout << "[RESULT] Task completed successfully!" << endl;\n    return 0;\n}\n`;
       } else if (lang === 'rust') {
         generated = `// AI Scripter Engine (Rust)\n\nfn main() {\n    println!("[INFO] Executing Rust binary task...");\n    println!("[RESULT] Task completed successfully!");\n}\n`;
+      } else {
+        generated = `// Unsupported language target.`;
       }
 
-      document.getElementById('scriptOutput').value = generated;
-      document.getElementById('terminalConsole').textContent = '> Script generated successfully. Click "Run Code" to execute.';
+      outputEl.value = generated;
+      consoleEl.textContent = '> Script generated successfully. Click "Run Code" to execute.';
     }
 
     function runScriptLocally() {
-      const code = document.getElementById('scriptOutput').value.trim();
+      const code = document.getElementById('scriptOutput')?.value.trim();
       const consoleEl = document.getElementById('terminalConsole');
+      if (!consoleEl) return;
+
       if (!code) {
         alert('No script to run! Generate a script first.');
         return;
@@ -752,50 +870,61 @@
     }
 
     function loadSampleScriptReq() {
-      document.getElementById('scriptPrompt').value = 'Write a python script that reads server access logs, parses IP addresses and error codes using Regular Expressions.';
-      generateScript();
+      const promptEl = document.getElementById('scriptPrompt');
+      if (promptEl) {
+        promptEl.value = 'Write a python script that reads server access logs, parses IP addresses and error codes using Regular Expressions.';
+        generateScript();
+      }
     }
 
     function copyScript() {
-      const text = document.getElementById('scriptOutput').value;
+      const text = document.getElementById('scriptOutput')?.value;
       if (!text) return alert('No script to copy!');
       navigator.clipboard.writeText(text);
       alert('Script copied to clipboard!');
     }
 
     function clearAllScript() {
-      document.getElementById('scriptPrompt').value = '';
-      document.getElementById('scriptOutput').value = '';
-      document.getElementById('terminalConsole').textContent = '> System ready. Click "Run Code" to test script execution...';
+      const promptEl = document.getElementById('scriptPrompt');
+      const outputEl = document.getElementById('scriptOutput');
+      const consoleEl = document.getElementById('terminalConsole');
+      if (promptEl) promptEl.value = '';
+      if (outputEl) outputEl.value = '';
+      if (consoleEl) consoleEl.textContent = '> System ready. Click "Run Code" to test script execution...';
     }
 
     /* PHOTO TO EXCEL FUNCTIONS */
     function handleImageUpload(event) {
-      const file = event.target.files[0];
+      const file = event.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = e => {
         const container = document.getElementById('imagePreviewContainer');
-        container.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 4px;" />`;
-        extractTableFromPhoto();
+        if (container) {
+          container.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 4px;" />`;
+          extractTableFromPhoto();
+        }
       };
       reader.readAsDataURL(file);
     }
 
     function extractTableFromPhoto() {
-      // Simulated OCR / Table extraction result in CSV format
+      const outputEl = document.getElementById('photoExcelOutput');
+      if (!outputEl) return;
       const mockCsv = `"ID","Product Name","Category","Price (PKR)","Stock"\n"1","Wireless Mouse","Accessories","2500","45"\n"2","Mechanical Keyboard","Hardware","8500","20"\n"3","HD Monitor","Displays","32000","12"\n"4","USB-C Hub","Accessories","4500","60"`;
-      document.getElementById('photoExcelOutput').value = mockCsv;
+      outputEl.value = mockCsv;
     }
 
     function loadSamplePhotoExcel() {
       const container = document.getElementById('imagePreviewContainer');
-      container.innerHTML = `<div style="border: 2px dashed var(--primary); padding: 1.5rem; border-radius: 6px; color: #60a5fa;">📊 Sample Invoice Table Image Loaded Successfully</div>`;
-      extractTableFromPhoto();
+      if (container) {
+        container.innerHTML = `<div style="border: 2px dashed var(--primary); padding: 1.5rem; border-radius: 6px; color: #60a5fa;">📊 Sample Invoice Table Image Loaded Successfully</div>`;
+        extractTableFromPhoto();
+      }
     }
 
     function downloadExcelCsv() {
-      const csv = document.getElementById('photoExcelOutput').value;
+      const csv = document.getElementById('photoExcelOutput')?.value;
       if (!csv) return alert('No extracted table data to download!');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -807,8 +936,10 @@
     }
 
     function clearAllPhotoExcel() {
-      document.getElementById('imagePreviewContainer').innerHTML = `<span>Upload an image containing tabular data or click 'Load Sample Data'</span>`;
-      document.getElementById('photoExcelOutput').value = '';
+      const container = document.getElementById('imagePreviewContainer');
+      const outputEl = document.getElementById('photoExcelOutput');
+      if (container) container.innerHTML = `<span>Upload an image containing tabular data or click 'Load Sample Data'</span>`;
+      if (outputEl) outputEl.value = '';
     }
   </script>
 </body>
